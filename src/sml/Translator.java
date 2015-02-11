@@ -2,7 +2,12 @@ package sml;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -77,29 +82,99 @@ public class Translator {
 		int s2;
 		int r;
 		int x;
+		String s;
 
 		if (line.equals(""))
 			return null;
 
 		String ins = scan();
-		switch (ins) {
-		case "add":
-			r = scanInt();
-			s1 = scanInt();
-			s2 = scanInt();
-			return new AddInstruction(label, r, s1, s2);
-		case "lin":
-			r = scanInt();
-			s1 = scanInt();
-			return new LinInstruction(label, r, s1);
-		case "mul":
-			r = scanInt();
-			s1 = scanInt();
-			s2 = scanInt();
-			return new MulInstruction(label, r, s1, s2);
-		}
+		
+		r = scanInt();
+		
+		try {
+			// We have to use fully qualified class name, or it causes problems
+			String className = "sml." + ins.substring(0, 1).toUpperCase() + ins.substring(1) + "Instruction";
+			Class<?> baseClass = Class.forName(className);
+			Constructor[] constructors = baseClass.getDeclaredConstructors();
+			int paramCount = constructors[constructors.length - 1].getParameterCount();	
+			Class[] args;
+			
+			
+			/*
+			 * We could use getConstructorTypes baseClass.getDeclaredConstructor(args).getParameterTypes() in future
+			 * revisions of this code
+			 */
+			
+			if(paramCount == 2) {
+				if(className.contains("Out")) {
+					args = new Class[] {
+						String.class,
+						int.class
+					};
+					return (Instruction) baseClass.getDeclaredConstructor(args).newInstance(label, r);
+				} else {
+					args = new Class[] {
+						String.class,
+						String.class
+					};
+					
+					return (Instruction) baseClass.getDeclaredConstructor(args).newInstance(label, Integer.toString(r));
+				}
+				
+			} else if(paramCount == 3) {
+				if(className.contains("Bnz")) {
+					args = new Class[] {
+						String.class,
+						int.class,
+						String.class
+					};
+					
+					s = scan();
+					
+					return (Instruction) baseClass.getDeclaredConstructor(args).newInstance(label, r, s);
+				} else {
+					args = new Class[] {
+						String.class,
+						int.class,
+						int.class
+					};
+					
+					s1 = scanInt();
+					s2 = scanInt();
+					
+					return (Instruction) baseClass.getDeclaredConstructor(args).newInstance(label, r, s1);
+				}
+			} else if(paramCount == 4) {
+				args = new Class[] {
+					String.class,
+					int.class,
+					int.class,
+					int.class
+				};
 
-		// You will have to write code here for the other instructions.
+				s1 = scanInt();
+				s2 = scanInt();
+				
+				return (Instruction) baseClass.getDeclaredConstructor(args).newInstance(label, r, s1, s2);
+			}
+	
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} finally {
+			// End
+		}
 
 		return null;
 	}
