@@ -3,6 +3,7 @@
 
 <strong>Example Instruction set</strong>
 <small>
+<br />
 f0 lin 20 6<br />
 f1 lin 21 1<br />
 f2 lin 22 1<br />
